@@ -37,6 +37,26 @@ export function useDependentFilter() {
 
   const selectedSubject = subjectsQuery.data?.find((s) => s.id === subjectId) ?? null;
 
+  useEffect(() => {
+    const batches = batchesQuery.data ?? [];
+
+    if (!selectedSubject || batches.length === 0) {
+      return;
+    }
+
+    if (selectedSubject.type === 'TH') {
+      const wholeClassBatch = batches.find((batch) => batch.label === 'Entire Class') ?? batches[0];
+      if (wholeClassBatch && batchId !== wholeClassBatch.id) {
+        setBatchId(wholeClassBatch.id);
+      }
+      return;
+    }
+
+    if (batchId && !batches.some((batch) => batch.id === batchId)) {
+      setBatchId(null);
+    }
+  }, [selectedSubject, batchesQuery.data, batchId]);
+
   return {
     academicYear: academicYearQuery.data,
     academicYearLoading: academicYearQuery.isLoading,

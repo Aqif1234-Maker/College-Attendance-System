@@ -4,6 +4,7 @@ import com.attendance.common.ApiException;
 import com.attendance.subject.Subject;
 import com.attendance.subject.SubjectRepository;
 import com.attendance.subject.SubjectType;
+import com.attendance.subject.TeachingStructureCleanupService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +18,17 @@ public class BatchService {
     private final BatchRepository batchRepository;
     private final SubjectRepository subjectRepository;
     private final BatchMapper batchMapper;
+    private final TeachingStructureCleanupService teachingStructureCleanupService;
 
-    public BatchService(BatchRepository batchRepository, SubjectRepository subjectRepository, BatchMapper batchMapper) {
+    public BatchService(
+            BatchRepository batchRepository,
+            SubjectRepository subjectRepository,
+            BatchMapper batchMapper,
+            TeachingStructureCleanupService teachingStructureCleanupService) {
         this.batchRepository = batchRepository;
         this.subjectRepository = subjectRepository;
         this.batchMapper = batchMapper;
+        this.teachingStructureCleanupService = teachingStructureCleanupService;
     }
 
     public BatchDto create(CreateBatchRequest request) {
@@ -62,6 +69,7 @@ public class BatchService {
                     "The Entire Class batch is managed automatically and cannot be deleted directly");
         }
 
+        teachingStructureCleanupService.cleanupBatch(batch);
         batchRepository.delete(batch);
     }
 }

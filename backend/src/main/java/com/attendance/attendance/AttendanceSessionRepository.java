@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface AttendanceSessionRepository extends JpaRepository<AttendanceSession, Long> {
 
+    List<AttendanceSession> findByBatchId(Long batchId);
+
     Optional<AttendanceSession> findByClassEntityIdAndSubjectIdAndBatchIdAndSessionDateAndSlot(
             Long classId, Long subjectId, Long batchId, LocalDate sessionDate, int slot);
 

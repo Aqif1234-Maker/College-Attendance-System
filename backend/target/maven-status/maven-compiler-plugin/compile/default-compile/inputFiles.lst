@@ -83,6 +83,7 @@ C:\Projects\attendance system\attendance-system-final\backend\src\main\java\com\
 C:\Projects\attendance system\attendance-system-final\backend\src\main\java\com\attendance\subject\SubjectRepository.java
 C:\Projects\attendance system\attendance-system-final\backend\src\main\java\com\attendance\subject\SubjectService.java
 C:\Projects\attendance system\attendance-system-final\backend\src\main\java\com\attendance\subject\SubjectType.java
+C:\Projects\attendance system\attendance-system-final\backend\src\main\java\com\attendance\subject\TeachingStructureCleanupService.java
 C:\Projects\attendance system\attendance-system-final\backend\src\main\java\com\attendance\user\CreateUserRequest.java
 C:\Projects\attendance system\attendance-system-final\backend\src\main\java\com\attendance\user\ResetPasswordRequest.java
 C:\Projects\attendance system\attendance-system-final\backend\src\main\java\com\attendance\user\Role.java

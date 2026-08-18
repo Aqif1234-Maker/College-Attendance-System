@@ -1,6 +1,7 @@
 com\attendance\attendance\AttendanceMapperImpl.class
 com\attendance\student\StudentDto.class
 com\attendance\batch\BatchRepository.class
+com\attendance\academicyear\AcademicYearService.class
 com\attendance\class_\CreateClassRequest.class
 com\attendance\reports\ReportController.class
 com\attendance\attendance\AttendanceSessionRepository.class
@@ -82,6 +83,7 @@ com\attendance\attendance\MarkAttendanceRequest.class
 com\attendance\assignment\AssignedBatchDto.class
 com\attendance\subject\SubjectType.class
 com\attendance\student\StudentService.class
+com\attendance\subject\TeachingStructureCleanupService.class
 com\attendance\attendance\AttendanceSessionSlotLockRepository.class
 com\attendance\subject\SubjectRepository.class
 com\attendance\batch\BatchMapperImpl.class

@@ -24,18 +24,21 @@ public class SubjectService {
     private final UserRepository userRepository;
     private final BatchRepository batchRepository;
     private final SubjectMapper subjectMapper;
+    private final TeachingStructureCleanupService teachingStructureCleanupService;
 
     public SubjectService(
             SubjectRepository subjectRepository,
             ClassRepository classRepository,
             UserRepository userRepository,
             BatchRepository batchRepository,
-            SubjectMapper subjectMapper) {
+            SubjectMapper subjectMapper,
+            TeachingStructureCleanupService teachingStructureCleanupService) {
         this.subjectRepository = subjectRepository;
         this.classRepository = classRepository;
         this.userRepository = userRepository;
         this.batchRepository = batchRepository;
         this.subjectMapper = subjectMapper;
+        this.teachingStructureCleanupService = teachingStructureCleanupService;
     }
 
     public SubjectDto create(CreateSubjectRequest request, Long creatorUserId) {
@@ -107,6 +110,7 @@ public class SubjectService {
     public void delete(Long id, Long requesterUserId) {
         Subject subject = findEntity(id);
         assertCreator(subject, requesterUserId);
+        teachingStructureCleanupService.cleanupSubject(subject.getId());
         subjectRepository.delete(subject);
     }
 
