@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +31,7 @@ public class AttendanceService {
 
     private static final int MAX_THEORY_SLOT = 7;
     private static final int MAX_PRACTICAL_SLOT = 4;
+    private static final long WHOLE_CLASS_SCOPE_KEY = 0L;
 
     private final AttendanceSessionRepository sessionRepository;
     private final AttendanceSessionSlotLockRepository sessionSlotLockRepository;
@@ -101,10 +103,8 @@ public class AttendanceService {
             return buildSessionDto(session);
         }
 
-        Optional<AttendanceSession> overlappingSession = sessionRepository
-                .findByClassEntityIdAndSessionDate(classEntity.getId(), request.sessionDate()).stream()
-                .filter(session -> overlapsRequestedWindow(session, requestedWindow))
-                .findFirst();
+        Optional<AttendanceSession> overlappingSession = findConflictingSession(
+                classEntity.getId(), batch, request.sessionDate(), requestedWindow);
 
         if (overlappingSession.isPresent()) {
             AttendanceSession session = overlappingSession.get();
@@ -200,9 +200,30 @@ public class AttendanceService {
         }
     }
 
-    private boolean overlapsRequestedWindow(AttendanceSession session, SlotSchedule.SlotWindow requestedWindow) {
-        SlotSchedule.SlotWindow existingWindow = SlotSchedule.forTypeAndSlot(session.getSubject().getType(), session.getSlot());
-        return existingWindow.overlaps(requestedWindow);
+    private Optional<AttendanceSession> findConflictingSession(
+            Long classId, Batch requestedBatch, java.time.LocalDate sessionDate, SlotSchedule.SlotWindow requestedWindow) {
+        List<Byte> requestedPeriodUnits = requestedWindow.periodUnits().stream()
+                .map(Integer::byteValue)
+                .toList();
+
+        long requestedScopeKey = scopeKeyForBatch(requestedBatch);
+
+        return sessionSlotLockRepository
+                .findByClassEntityIdAndSessionDateAndPeriodUnitIn(classId, sessionDate, requestedPeriodUnits).stream()
+                .filter(lock -> conflictsWithRequestedScope(lock, requestedBatch, requestedScopeKey))
+                .sorted(Comparator.comparing(AttendanceSessionSlotLock::getPeriodUnit))
+                .map(AttendanceSessionSlotLock::getSession)
+                .findFirst();
+    }
+
+    private boolean conflictsWithRequestedScope(
+            AttendanceSessionSlotLock existingLock, Batch requestedBatch, long requestedScopeKey) {
+        // A whole-class session blocks everyone in the class for that period.
+        if (existingLock.getScopeKey() == WHOLE_CLASS_SCOPE_KEY || requestedBatch.isWholeClass()) {
+            return true;
+        }
+        // Practicals may run in parallel, but only if they are for different batches.
+        return existingLock.getScopeKey() == requestedScopeKey;
     }
 
     private String buildSlotAlreadyBookedMessage(AttendanceSession session, SlotSchedule.SlotWindow bookedWindow) {
@@ -212,15 +233,21 @@ public class AttendanceService {
     }
 
     private void createSlotLocks(AttendanceSession session, SlotSchedule.SlotWindow requestedWindow) {
+        long scopeKey = scopeKeyForBatch(session.getBatch());
         for (Integer periodUnit : requestedWindow.periodUnits()) {
             AttendanceSessionSlotLock lock = new AttendanceSessionSlotLock();
             lock.setSession(session);
             lock.setClassEntity(session.getClassEntity());
             lock.setSessionDate(session.getSessionDate());
             lock.setPeriodUnit(periodUnit.byteValue());
+            lock.setScopeKey(scopeKey);
             sessionSlotLockRepository.save(lock);
         }
         sessionSlotLockRepository.flush();
+    }
+
+    private long scopeKeyForBatch(Batch batch) {
+        return batch.isWholeClass() ? WHOLE_CLASS_SCOPE_KEY : batch.getId();
     }
 
     /**

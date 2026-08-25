@@ -35,6 +35,9 @@ public class AttendanceSessionSlotLock {
     @Column(name = "period_unit", nullable = false)
     private byte periodUnit;
 
+    @Column(name = "scope_key", nullable = false)
+    private long scopeKey;
+
     public Long getId() {
         return id;
     }
@@ -69,5 +72,13 @@ public class AttendanceSessionSlotLock {
 
     public void setPeriodUnit(byte periodUnit) {
         this.periodUnit = periodUnit;
+    }
+
+    public long getScopeKey() {
+        return scopeKey;
+    }
+
+    public void setScopeKey(long scopeKey) {
+        this.scopeKey = scopeKey;
     }
 }
