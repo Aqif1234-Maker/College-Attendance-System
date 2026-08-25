@@ -2,7 +2,7 @@ app:
   bootstrap-admin:
     enabled: true
     username: admin
-    password: admin@123
+    password: Enter_admin_password
     full-name: System Administrator
 
 logging:
