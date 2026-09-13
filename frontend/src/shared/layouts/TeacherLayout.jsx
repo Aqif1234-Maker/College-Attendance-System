@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, History, BarChart3, User } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, History, BarChart3, User, GraduationCap } from 'lucide-react';
 import Sidebar from '../ui/Sidebar';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -7,6 +7,7 @@ const TEACHER_NAV = [
   { to: '/teacher', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { to: '/teacher/attendance', label: 'Take Attendance', icon: <CheckSquare size={18} /> },
   { to: '/teacher/attendance-history', label: 'Attendance History', icon: <History size={18} /> },
+  { to: '/teacher/oe', label: 'Open Elective', icon: <GraduationCap size={18} /> },
   { to: '/teacher/reports', label: 'Reports', icon: <BarChart3 size={18} /> },
   { to: '/teacher/profile', label: 'Profile', icon: <User size={18} /> }
 ];

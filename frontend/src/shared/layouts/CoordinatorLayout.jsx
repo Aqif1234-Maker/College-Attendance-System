@@ -1,19 +1,18 @@
 import { Outlet } from 'react-router-dom';
 import {
-  LayoutDashboard, School, BookOpen, UserCog, Users, CheckSquare, History, BarChart3
+  LayoutDashboard, School, BookOpen, UserCog, Users2, Users, CheckSquare, History, BarChart3, KeyRound
 } from 'lucide-react';
 import Sidebar from '../ui/Sidebar';
 import { useAuth } from '../../hooks/useAuth';
 
-// Union of the Coordinator sidebar (spec §2.2) and Teacher sidebar (spec §2.3), per the
-// finalized single-account decision: a Coordinator uses one account, one role, and gets
-// attendance/report access for anything they self-assign to, same as any other teacher.
 const COORDINATOR_NAV = [
   { to: '/coordinator', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { to: '/coordinator/classes', label: 'Assigned Classes', icon: <School size={18} /> },
-  { to: '/coordinator/subjects', label: 'Subjects & Batches', icon: <BookOpen size={18} /> },
+  { to: '/coordinator/subjects', label: 'Subjects', icon: <BookOpen size={18} /> },
   { to: '/coordinator/faculty-assignment', label: 'Faculty Assignment', icon: <UserCog size={18} /> },
+  { to: '/coordinator/batches', label: 'Batch Management', icon: <Users2 size={18} /> },
   { to: '/coordinator/students', label: 'Students', icon: <Users size={18} /> },
+  { to: '/coordinator/oe-access', label: 'OE Access', icon: <KeyRound size={18} /> },
   { to: '/coordinator/attendance', label: 'Take Attendance', icon: <CheckSquare size={18} /> },
   { to: '/coordinator/attendance-history', label: 'Attendance History', icon: <History size={18} /> },
   { to: '/coordinator/reports', label: 'Reports', icon: <BarChart3 size={18} /> }

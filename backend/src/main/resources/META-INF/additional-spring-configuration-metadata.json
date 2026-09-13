@@ -1,0 +1,39 @@
+{
+  "properties": [
+    {
+      "name": "app.bootstrap-admin.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether the development bootstrap admin user should be created."
+    },
+    {
+      "name": "app.bootstrap-admin.username",
+      "type": "java.lang.String",
+      "description": "Username for the development bootstrap admin user."
+    },
+    {
+      "name": "app.bootstrap-admin.password",
+      "type": "java.lang.String",
+      "description": "Password for the development bootstrap admin user."
+    },
+    {
+      "name": "app.bootstrap-admin.full-name",
+      "type": "java.lang.String",
+      "description": "Display name for the development bootstrap admin user."
+    },
+    {
+      "name": "app.jwt.secret",
+      "type": "java.lang.String",
+      "description": "Secret key used to sign JWT access tokens."
+    },
+    {
+      "name": "app.jwt.expiration-ms",
+      "type": "java.lang.Long",
+      "description": "JWT access token lifetime in milliseconds."
+    },
+    {
+      "name": "app.cors.allowed-origins",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of allowed CORS origins."
+    }
+  ]
+}

@@ -1,7 +1,0 @@
-# Production profile: no dev conveniences, no auto-seeded accounts unless the
-# operator explicitly sets BOOTSTRAP_ADMIN_ENABLED=true via environment variables
-# at deploy time — nothing in this file enables it by default.
-logging:
-  level:
-    com.attendance: INFO
-    org.hibernate.SQL: WARN

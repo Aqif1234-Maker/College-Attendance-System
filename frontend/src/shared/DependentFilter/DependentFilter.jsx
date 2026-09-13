@@ -14,7 +14,7 @@ function Select({ label, value, onChange, options, disabled, placeholder }) {
           <option value="">{placeholder}</option>
           {options.map((opt) => (
             <option key={opt.id} value={opt.id}>
-              {opt.name ?? opt.label}
+              {opt.displayName ?? opt.name ?? opt.label}
             </option>
           ))}
         </select>

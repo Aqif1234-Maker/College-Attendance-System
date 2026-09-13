@@ -36,7 +36,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("This action conflicts with existing data"));
+                .body(ApiResponse.error(
+                        "This slot is already booked by another teacher. Please refresh and choose another slot."));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

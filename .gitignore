@@ -1,0 +1,39 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+
+# Logs
+*.log
+logs/
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+
+# Java / Spring Boot build output
+target/
+*/target/
+
+# Node / Vite build output
+node_modules/
+*/node_modules/
+dist/
+*/dist/
+
+# Test and coverage output
+coverage/
+*/coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo

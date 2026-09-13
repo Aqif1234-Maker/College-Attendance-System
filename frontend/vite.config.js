@@ -15,7 +15,9 @@ export default defineConfig({
       '/assignments': 'http://localhost:8080',
       '/students': 'http://localhost:8080',
       '/attendance': 'http://localhost:8080',
-      '/reports': 'http://localhost:8080'
+      '/reports': 'http://localhost:8080',
+      '/semesters': 'http://localhost:8080',
+      '/oe': 'http://localhost:8080'
     }
   }
 });

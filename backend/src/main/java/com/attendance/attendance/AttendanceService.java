@@ -6,6 +6,11 @@ import com.attendance.batch.BatchRepository;
 import com.attendance.class_.ClassEntity;
 import com.attendance.class_.ClassRepository;
 import com.attendance.common.ApiException;
+import com.attendance.oe.OeEnrollment;
+import com.attendance.oe.OeEnrollmentRepository;
+import com.attendance.oe.OeSubject;
+import com.attendance.oe.OeSubjectRepository;
+import com.attendance.oe.OeTeachingSlotMode;
 import com.attendance.student.Student;
 import com.attendance.student.StudentRepository;
 import com.attendance.subject.Subject;
@@ -43,6 +48,8 @@ public class AttendanceService {
     private final UserRepository userRepository;
     private final AssignmentLookupService assignmentLookupService;
     private final AttendanceMapper attendanceMapper;
+    private final OeSubjectRepository oeSubjectRepository;
+    private final OeEnrollmentRepository oeEnrollmentRepository;
 
     public AttendanceService(
             AttendanceSessionRepository sessionRepository,
@@ -54,7 +61,9 @@ public class AttendanceService {
             StudentRepository studentRepository,
             UserRepository userRepository,
             AssignmentLookupService assignmentLookupService,
-            AttendanceMapper attendanceMapper) {
+            AttendanceMapper attendanceMapper,
+            OeSubjectRepository oeSubjectRepository,
+            OeEnrollmentRepository oeEnrollmentRepository) {
         this.sessionRepository = sessionRepository;
         this.sessionSlotLockRepository = sessionSlotLockRepository;
         this.recordRepository = recordRepository;
@@ -65,6 +74,8 @@ public class AttendanceService {
         this.userRepository = userRepository;
         this.assignmentLookupService = assignmentLookupService;
         this.attendanceMapper = attendanceMapper;
+        this.oeSubjectRepository = oeSubjectRepository;
+        this.oeEnrollmentRepository = oeEnrollmentRepository;
     }
 
     /**
@@ -103,8 +114,10 @@ public class AttendanceService {
             return buildSessionDto(session);
         }
 
+        List<ClassEntity> lockClasses = classesToLockForSession(classEntity, subject);
+
         Optional<AttendanceSession> overlappingSession = findConflictingSession(
-                classEntity.getId(), batch, request.sessionDate(), requestedWindow);
+                lockClasses, batch, request.sessionDate(), requestedWindow);
 
         if (overlappingSession.isPresent()) {
             AttendanceSession session = overlappingSession.get();
@@ -126,7 +139,7 @@ public class AttendanceService {
 
         try {
             session = sessionRepository.saveAndFlush(session);
-            createSlotLocks(session, requestedWindow);
+            createSlotLocks(session, requestedWindow, lockClasses);
         } catch (DataIntegrityViolationException ex) {
             throw new ApiException(HttpStatus.CONFLICT,
                     "This slot was just booked for this class by another teacher. Please refresh and try again.");
@@ -193,7 +206,7 @@ public class AttendanceService {
     }
 
     private void validateSlot(SubjectType type, int slot) {
-        int maxSlot = (type == SubjectType.TH) ? MAX_THEORY_SLOT : MAX_PRACTICAL_SLOT;
+        int maxSlot = (type == SubjectType.PR) ? MAX_PRACTICAL_SLOT : MAX_THEORY_SLOT;
         if (slot < 1 || slot > maxSlot) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Slot " + slot + " is invalid for a " + type + " subject (valid range: 1-" + maxSlot + ")");
@@ -201,15 +214,21 @@ public class AttendanceService {
     }
 
     private Optional<AttendanceSession> findConflictingSession(
-            Long classId, Batch requestedBatch, java.time.LocalDate sessionDate, SlotSchedule.SlotWindow requestedWindow) {
+            List<ClassEntity> lockClasses,
+            Batch requestedBatch,
+            java.time.LocalDate sessionDate,
+            SlotSchedule.SlotWindow requestedWindow) {
         List<Byte> requestedPeriodUnits = requestedWindow.periodUnits().stream()
                 .map(Integer::byteValue)
                 .toList();
 
         long requestedScopeKey = scopeKeyForBatch(requestedBatch);
 
-        return sessionSlotLockRepository
-                .findByClassEntityIdAndSessionDateAndPeriodUnitIn(classId, sessionDate, requestedPeriodUnits).stream()
+        return lockClasses.stream()
+                .flatMap(lockClass -> sessionSlotLockRepository
+                        .findByClassEntityIdAndSessionDateAndPeriodUnitIn(
+                                lockClass.getId(), sessionDate, requestedPeriodUnits)
+                        .stream())
                 .filter(lock -> conflictsWithRequestedScope(lock, requestedBatch, requestedScopeKey))
                 .sorted(Comparator.comparing(AttendanceSessionSlotLock::getPeriodUnit))
                 .map(AttendanceSessionSlotLock::getSession)
@@ -227,21 +246,25 @@ public class AttendanceService {
     }
 
     private String buildSlotAlreadyBookedMessage(AttendanceSession session, SlotSchedule.SlotWindow bookedWindow) {
-        return "Slot " + bookedWindow.label() + " is already booked for this class on "
+        return "Slot " + bookedWindow.label() + " is already booked on "
                 + session.getSessionDate() + " by " + session.getLockedBy().getFullName()
-                + " for " + session.getSubject().getName() + " (" + session.getBatch().getLabel() + ").";
+                + " for " + session.getSubject().getName() + " (" + session.getBatch().getLabel()
+                + "). Please choose another slot.";
     }
 
-    private void createSlotLocks(AttendanceSession session, SlotSchedule.SlotWindow requestedWindow) {
+    private void createSlotLocks(
+            AttendanceSession session, SlotSchedule.SlotWindow requestedWindow, List<ClassEntity> lockClasses) {
         long scopeKey = scopeKeyForBatch(session.getBatch());
-        for (Integer periodUnit : requestedWindow.periodUnits()) {
-            AttendanceSessionSlotLock lock = new AttendanceSessionSlotLock();
-            lock.setSession(session);
-            lock.setClassEntity(session.getClassEntity());
-            lock.setSessionDate(session.getSessionDate());
-            lock.setPeriodUnit(periodUnit.byteValue());
-            lock.setScopeKey(scopeKey);
-            sessionSlotLockRepository.save(lock);
+        for (ClassEntity lockClass : lockClasses) {
+            for (Integer periodUnit : requestedWindow.periodUnits()) {
+                AttendanceSessionSlotLock lock = new AttendanceSessionSlotLock();
+                lock.setSession(session);
+                lock.setClassEntity(lockClass);
+                lock.setSessionDate(session.getSessionDate());
+                lock.setPeriodUnit(periodUnit.byteValue());
+                lock.setScopeKey(scopeKey);
+                sessionSlotLockRepository.save(lock);
+            }
         }
         sessionSlotLockRepository.flush();
     }
@@ -250,12 +273,55 @@ public class AttendanceService {
         return batch.isWholeClass() ? WHOLE_CLASS_SCOPE_KEY : batch.getId();
     }
 
-    /**
-     * FIX: students must be scoped to the session's batch, not the whole class.
-     * A whole-class (Theory) batch includes every active student in the class.
-     * A specific Practical batch (e.g. B1) includes only students whose batchLabel matches.
-     */
+    private List<ClassEntity> classesToLockForSession(ClassEntity classEntity, Subject subject) {
+        if (subject.getType() != SubjectType.OE) {
+            return List.of(classEntity);
+        }
+
+        OeSubject oeSubject = oeSubjectRepository.findBySubjectId(subject.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "OE subject metadata missing for subject " + subject.getId()));
+
+        if (oeSubject.getOeTeachingSlot().getMode() != OeTeachingSlotMode.COMBINED) {
+            return List.of(classEntity);
+        }
+
+        return List.of(
+                oeSubject.getOeTeachingSlot().getSemester().getClassA(),
+                oeSubject.getOeTeachingSlot().getSemester().getClassB());
+    }
+
+    private String classNameForSessionDisplay(AttendanceSession session, String fallbackClassName) {
+        Subject subject = session.getSubject();
+        if (subject.getType() != SubjectType.OE) {
+            return fallbackClassName;
+        }
+
+        OeSubject oeSubject = oeSubjectRepository.findBySubjectId(subject.getId()).orElse(null);
+        if (oeSubject == null || oeSubject.getOeTeachingSlot().getMode() != OeTeachingSlotMode.COMBINED) {
+            return fallbackClassName;
+        }
+
+        return oeSubject.getOeTeachingSlot().getSemester().getClassA().getName()
+                + " + "
+                + oeSubject.getOeTeachingSlot().getSemester().getClassB().getName()
+                + " (Combined OE)";
+    }
+
     private List<Student> studentsForSession(AttendanceSession session) {
+        Subject subject = session.getSubject();
+
+        if (subject.getType() == SubjectType.OE) {
+            OeSubject oeSubject = oeSubjectRepository.findBySubjectId(subject.getId())
+                    .orElseThrow(() -> new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "OE subject metadata missing for subject " + subject.getId()));
+
+            return oeEnrollmentRepository.findByOeSubjectId(oeSubject.getId()).stream()
+                    .map(OeEnrollment::getStudent)
+                    .filter(Student::isActive)
+                    .toList();
+        }
+
         List<Student> classStudents = studentRepository.findByClassEntityId(session.getClassEntity().getId());
         Batch batch = session.getBatch();
 
@@ -279,7 +345,8 @@ public class AttendanceService {
                 .toList();
 
         return new AttendanceSessionDto(
-                base.id(), base.classId(), base.className(), base.subjectId(), base.subjectName(),
+                base.id(), base.classId(), classNameForSessionDisplay(session, base.className()),
+                base.subjectId(), base.subjectName(),
                 base.batchId(), base.batchLabel(), base.sessionDate(), base.slot(),
                 base.lockedById(), base.lockedByName(), session.isSubmitted(), studentRecords);
     }

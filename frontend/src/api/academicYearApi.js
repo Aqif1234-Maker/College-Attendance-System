@@ -10,5 +10,5 @@ export function useCurrentAcademicYear() {
   return useQuery({
     queryKey: ['academicYear', 'current'],
     queryFn: fetchCurrentAcademicYear
-  });
+  }); 
 }

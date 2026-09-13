@@ -1,0 +1,2 @@
+ALTER TABLE batches
+    MODIFY COLUMN label VARCHAR(40) NOT NULL;

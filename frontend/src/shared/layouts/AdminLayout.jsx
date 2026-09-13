@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { LayoutDashboard, Users, UserCog, CalendarRange, School, ShieldCheck, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, CalendarRange, School, ShieldCheck, Settings, CalendarClock } from 'lucide-react';
 import Sidebar from '../ui/Sidebar';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -8,6 +8,7 @@ const ADMIN_NAV = [
   { to: '/admin/faculty', label: 'Faculty', icon: <Users size={18} /> },
   { to: '/admin/coordinators', label: 'Class Coordinators', icon: <UserCog size={18} /> },
   { to: '/admin/academic-years', label: 'Academic Year', icon: <CalendarRange size={18} /> },
+  { to: '/admin/semesters', label: 'Semesters', icon: <CalendarClock size={18} /> },
   { to: '/admin/classes', label: 'Classes', icon: <School size={18} /> },
   { to: '/admin/users', label: 'Users', icon: <ShieldCheck size={18} /> },
   { to: '/admin/settings', label: 'Settings', icon: <Settings size={18} /> }
